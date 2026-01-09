@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智绘AI - 龙恬个人开发</title>
+  <style>
+    /* 全局样式重置+基础配置 核心圆角预设 */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Microsoft Yahei", "PingFang SC", sans-serif;
+      outline: none;
+    }
+    :root {
+      --primary: #6366f1; /* 主色调-科技紫蓝 */
+      --primary-light: #818cf8;
+      --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      --bg-main: #0f172a; /* 主背景-深空灰蓝 */
+      --bg-card: rgba(30, 41, 59, 0.6); /* 卡片背景-玻璃态 */
+      --text-main: #f8fafc;
+      --text-secondary: #94a3b8;
+      --radius-sm: 12px;  /* 小圆角 */
+      --radius-md: 20px;  /* 中圆角-控件主圆角 */
+      --radius-lg: 28px;  /* 大圆角-卡片/面板 */
+      --radius-full: 9999px; /* 全圆角-胶囊按钮 */
+      --shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      --transition: all 0.3s ease;
+    }
+    body {
+      background-color: var(--bg-main);
+      background-image: radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.05) 0%, transparent 50%);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== 新增：公告弹窗样式 最优先展示 ===== */
+    .notice-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .notice-box {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 40px 30px;
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+      border: 1px solid var(--primary);
+      box-shadow: 0 0 30px rgba(99,102,241,0.5);
+    }
+    .notice-box h2 {
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      color: transparent;
+      margin-bottom: 20px;
+      font-size: 22px;
+    }
+    .notice-box p {
+      font-size: 18px;
+      line-height: 2;
+      color: #ffffff;
+      font-weight: 500;
+    }
+    .close-notice {
+      margin-top: 30px;
+      padding: 10px 30px;
+    }
+
+    /* 水滴涟漪点击特效核心样式 - 所有按钮通用 你的核心需求 */
+    .btn {
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      z-index: 1;
+    }
+    .btn::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s ease, height 0.6s ease;
+    }
+    .btn:active::after {
+      width: 300px;
+      height: 300px;
+    }
+
+    /* 导航栏 - 圆角+玻璃态 */
+    header {
+      padding: 16px 5%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      position: sticky;
+      top: 0;
+      z-index: 99;
+    }
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-menu {
+      display: flex;
+      gap: 32px;
+    }
+    .nav-menu a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 15px;
+      transition: var(--transition);
+      padding: 8px 0;
+    }
+    .nav-menu a:hover {
+      color: var(--text-main);
+      border-bottom: 2px solid var(--primary);
+    }
+    .nav-btn-group {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* 按钮样式库 - 全圆角 三种核心按钮 */
+    .btn-outline {
+      padding: 10px 20px;
+      border-radius: var(--radius-full);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-main);
+      font-size: 14px;
+      transition: var(--transition);
+    }
+    .btn-outline:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .btn-fill {
+      padding: 10px 24px;
+      border-radius: var(--radius-full);
+      background: var(--primary-gradient);
+      color: white;
+      font-size: 14px;
+      transition: var(--transition);
+    }
+    .btn-fill:hover {
+      filter: brightness(1.1);
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+    }
+    .btn-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-md);
+      background: var(--bg-card);
+      color: var(--text-main);
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+    .btn-icon:hover {
+      background: rgba(99, 102, 241, 0.1);
+      color: var(--primary-light);
+    }
+
+    /* 主内容区 - AI核心功能区 */
+    main {
+      padding: 60px 5%;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .hero {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+    .hero h1 {
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      line-height: 1.2;
+      margin-bottom: 24px;
+      background: linear-gradient(90deg, #ffffff 0%, #c7d2fe 100%);
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+    .hero p {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      color: var(--text-secondary);
+      max-width: 700px;
+      margin: 0 auto 40px;
+      line-height: 1.6;
+    }
+    .hero-btn {
+      padding: 16px 32px;
+      font-size: 18px;
+    }
+
+    /* AI输入+结果展示区 - 超大圆角+玻璃态+阴影 核心视觉区 */
+    .ai-box {
+      max-width: 900px;
+      margin: 0 auto 60px;
+      background: var(--bg-card);
+      backdrop-filter: blur(15px);
+      border-radius: var(--radius-lg);
+      padding: 30px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: var(--transition);
+    }
+    .ai-box:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+    .box-title {
+      font-size: 18px;
+      margin-bottom: 20px;
+      color: var(--text-main);
+      text-align: left;
+    }
+    textarea {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      color: var(--text-main);
+      font-size: 16px;
+      resize: none;
+      min-height: 180px;
+      transition: var(--transition);
+    }
+    textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    }
+    .ai-result {
+      width: 100%;
+      min-height: 180px;
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      color: var(--text-main);
+      font-size: 16px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      margin-top: 20px;
+    }
+    .empty-result {
+      color: var(--text-secondary);
+      text-align: center;
+      line-height: 180px;
+    }
+    .input-footer, .result-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+    }
+    .tips {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    /* 加载动画样式 */
+    .loading {
+      color: var(--primary-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .loading span {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      animation: loading 1s infinite ease-in-out;
+    }
+    .loading span:nth-child(2) { animation-delay: 0.2s; }
+    .loading span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes loading {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    /* AI功能卡片区 - 圆角卡片+悬停动画 */
+    .feature-section {
+      text-align: center;
+      margin-bottom: 80px;
+    }
+    .section-title {
+      font-size: clamp(1.8rem, 3vw, 2.5rem);
+      margin-bottom: 16px;
+    }
+    .section-desc {
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto 40px;
+    }
+    .feature-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    .card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 30px 24px;
+      border: 1px solid rgba(255,255,255,0.08);
+      transition: var(--transition);
+      text-align: left;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      border-color: var(--primary);
+      box-shadow: 0 0 30px rgba(99,102,241,0.2);
+    }
+    .card-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: var(--radius-md);
+      background: rgba(99,102,241,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary-light);
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+    .card h3 {
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+    .card p {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* 底部版权区 - 也加了你的署名 */
+    footer {
+      padding: 30px 5%;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 14px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      margin-top: 80px;
+    }
+    .author {
+        color: var(--primary-light);
+        font-weight: bold;
+    }
+
+    /* 响应式适配 - 手机端自动适配 */
+    @media (max-width: 768px) {
+      .nav-menu { display: none; }
+      .ai-box { padding: 20px; }
+      .hero h1 { font-size: 2rem; }
+      .feature-cards { grid-template-columns: 1fr; }
+      .notice-box { padding: 30px 20px; }
+      .notice-box p { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- ===== 新增：网站打开就弹出的公告弹窗 核心内容 ===== -->
+  <div class="notice-modal" id="noticeModal">
+    <div class="notice-box">
+      <h2>网站声明</h2>
+      <p>此网站以及AI调用全以龙恬个人开发！</p>
+      <button class="btn btn-fill close-notice" onclick="closeNotice()">确 定</button>
+    </div>
+  </div>
+
+  <!-- 导航栏 -->
+  <header>
+    <div class="logo">智绘AI</div>
+    <nav class="nav-menu">
+      <a href="#">首页</a>
+      <a href="#">AI绘画</a>
+      <a href="#">AI问答</a>
+      <a href="#">创作中心</a>
+      <a href="#">关于我们</a>
+    </nav>
+    <div class="nav-btn-group">
+      <button class="btn btn-outline">登录</button>
+      <button class="btn btn-fill">免费注册</button>
+    </div>
+  </header>
+
+  <!-- 主内容区 -->
+  <main>
+    <!-- 头部banner -->
+    <section class="hero">
+      <h1>释放创作灵感，AI 赋能你的每一个想法</h1>
+      <p>智能生成、高效创作、精准匹配，用AI轻松完成绘画、文案、问答、设计等多种需求，极简操作，极致体验</p>
+      <button class="btn btn-fill hero-btn">立即体验 AI 创作</button>
+    </section>
+
+    <!-- AI核心输入+结果展示区 -->
+    <section class="ai-box">
+      <div class="box-title">输入你的创作需求，AI 即刻生成</div>
+      <textarea id="promptInput" placeholder="例如：帮我生成一张赛博朋克风格的城市夜景插画描述，高分辨率、色彩绚丽；帮我写一段产品介绍文案；写一段Python代码；解答一个专业问题..."></textarea>
+      <div class="input-footer">
+        <span class="tips">支持绘画/文案/问答/代码/设计/诗歌等多种需求 ✨</span>
+        <div>
+          <button class="btn btn-outline" style="margin-right:10px;" onclick="clearContent()">清空内容</button>
+          <button class="btn btn-fill" onclick="callAIGenerate()">立即生成</button>
+        </div>
+      </div>
+
+      <div class="box-title" style="margin-top:30px;">AI 生成结果</div>
+      <div id="aiResult" class="ai-result empty-result">等待生成中，输入需求后点击「立即生成」即可...</div>
+    </section>
+
+    <!-- AI功能卡片区 -->
+    <section class="feature-section">
+      <h2 class="section-title">强大的 AI 功能，满足你的所有需求</h2>
+      <p class="section-desc">基于前沿大模型训练，多场景全覆盖，精准理解你的需求，生成高质量内容</p>
+      <div class="feature-cards">
+        <div class="card">
+          <div class="card-icon">🎨</div>
+          <h3>AI 智能绘画</h3>
+          <p>输入文字描述，一键生成高清插画、海报、壁纸、动漫等多种风格画作，支持自定义分辨率和画风</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">✍️</div>
+          <h3>文案智能创作</h3>
+          <p>自动生成朋友圈文案、产品介绍、演讲稿、小说、诗歌等，支持多风格定制，精准匹配场景需求</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">💡</div>
+          <h3>智能问答助手</h3>
+          <p>解答各类知识问题、专业咨询、生活常识，逻辑清晰、内容准确，24小时在线为你服务</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">💻</div>
+          <h3>代码生成调试</h3>
+          <p>输入需求自动生成代码，支持多语言调试、bug修复、代码优化，程序员高效开发必备工具</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 底部 -->
+  <footer>
+    <p>© 2026 智绘AI 版权所有 | <span class="author">龙恬 个人开发</span> | 专注于AI智能创作，赋能每一位创作者</p>
+  </footer>
+
+  <script>
+    // ✅ 你的智谱AI API密钥 已填入，无需修改
+    const API_KEY = "8004775d3e7d4f5b8bcfff9d35df417d.BoaPyJPvBdTFt16h";
+    // 智谱AI官方接口地址
+    const API_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
+
+    // 新增：关闭公告弹窗
+    function closeNotice() {
+      document.getElementById('noticeModal').style.display = 'none';
+    }
+
+    // 清空输入和结果
+    function clearContent() {
+      document.getElementById('promptInput').value = '';
+      document.getElementById('aiResult').innerHTML = '等待生成中，输入需求后点击「立即生成」即可...';
+      document.getElementById('aiResult').className = 'ai-result empty-result';
+    }
+
+    // 核心：调用AI生成结果
+    async function callAIGenerate() {
+      const prompt = document.getElementById('promptInput').value.trim();
+      const resultDom = document.getElementById('aiResult');
+      
+      // 校验输入
+      if (!prompt) {
+        resultDom.innerHTML = '⚠️ 请输入你的创作需求后再点击生成';
+        resultDom.className = 'ai-result';
+        return;
+      }
+
+      // 显示加载动画
+      resultDom.innerHTML = '<div class="loading"><span></span><span></span><span></span> AI思考中，请稍候...</div>';
+      resultDom.className = 'ai-result';
+
+      try {
+        // 发送请求调用智谱AI
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            "Authorization": `Bearer ${API_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "glm-4.5-flash", // 免费超强模型
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.8, // 创作自由度，越高越灵活
+            max_tokens: 2048  // 生成最大字数
+          })
+        });
+
+        const resData = await response.json();
+        
+        // 处理成功结果
+        if (resData.choices && resData.choices[0]) {
+          const aiContent = resData.choices[0].message.content;
+          resultDom.innerHTML = aiContent;
+        } else {
+          resultDom.innerHTML = `❌ 生成失败：${resData.error?.message || '服务器返回异常'}`;
+        }
+      } catch (error) {
+        // 处理错误
+        resultDom.innerHTML = `❌ 请求失败：${error.message || '网络异常，请检查网络后重试'}`;
+      }
+    }
+  </script>
+</body>
+</html>
